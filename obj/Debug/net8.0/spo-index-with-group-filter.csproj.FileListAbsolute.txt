@@ -83,3 +83,4 @@ C:\Users\juhyunlee\workspace\spo-index-with-group-filter\bin\Debug\net8.0\Micros
 C:\Users\juhyunlee\workspace\spo-index-with-group-filter\bin\Debug\net8.0\Microsoft.SemanticKernel.Abstractions.dll
 C:\Users\juhyunlee\workspace\spo-index-with-group-filter\bin\Debug\net8.0\Microsoft.SemanticKernel.Connectors.OpenAI.dll
 C:\Users\juhyunlee\workspace\spo-index-with-group-filter\bin\Debug\net8.0\Microsoft.SemanticKernel.Core.dll
+C:\Users\juhyunlee\workspace\spo-index-with-group-filter\obj\Debug\net8.0\spo-index-with-group-filter.sourcelink.json

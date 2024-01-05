@@ -25,22 +25,27 @@ public class ApiService
 
     public async Task<object> ExecuteGetAsync(string requestUrl, string accessToken)
     {
-        HttpClient httpClient = new HttpClient();
+        
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
         var authHeader = new AuthenticationHeaderValue(requestHeaderAuthorizationType, accessToken);
         request.Headers.Add("Accept", "application/json");
         request.Headers.Add("Authorization", "Bearer " + accessToken);
-
-        HttpResponseMessage response = await httpClient.SendAsync(request);
-        if(response.IsSuccessStatusCode)
-        {
-            string responseContent = await response.Content.ReadAsStringAsync();
-            return responseContent;
+        using (HttpClient httpClient = new HttpClient()){
+            using (HttpResponseMessage response = await httpClient.SendAsync(request))
+            {
+                if(response.IsSuccessStatusCode)
+                {
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    return responseContent;
+                }
+                else
+                {
+                    Console.WriteLine($"Error: {response.StatusCode}");
+                }
+            }
         }
-        else
-        {
-            Console.WriteLine($"Error: {response.StatusCode}");
-        }
+        
+        
         return "";
     }
 

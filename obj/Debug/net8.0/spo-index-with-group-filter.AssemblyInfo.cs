@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("spo-index-with-group-filter")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7c646762311765fafb9c6e307e68d38e08046a5e")]
 [assembly: System.Reflection.AssemblyProductAttribute("spo-index-with-group-filter")]
 [assembly: System.Reflection.AssemblyTitleAttribute("spo-index-with-group-filter")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
