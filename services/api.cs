@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 /// </summary>
 public class ApiService
 {
-    private HttpClient client;
+    private HttpClient client = new HttpClient();
     const string requestHeaderAuthorizationType = "Bearer";
     const string jsonContentType = "application/json";
     const double httpClientTimeout = 5;

@@ -154,6 +154,6 @@ public class Program
             }
         }
 
-        Console.WriteLine("---- succesfully created index and index data, please check azure portal (please note that it may take couple of minutes for index to populate with data.) ----");
+        Console.WriteLine("---- Succesfully created index and index data, please check azure portal (please note that it may take couple of minutes for index to populate with data.) ----");
     }
 }

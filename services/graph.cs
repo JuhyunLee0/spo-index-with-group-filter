@@ -44,8 +44,8 @@ public class GraphService
                 {
                     requestConfiguration.QueryParameters.Select = new string[] { "id" };
                 });
-            Console.WriteLine($"Site ID: {site.Id}");
-            _spoSiteId = site.Id;
+            Console.WriteLine($"Site ID: {site!.Id}");
+            _spoSiteId = site.Id!;
         }
         catch (ServiceException ex)
         {
@@ -71,7 +71,7 @@ public class GraphService
             if (grantedGroup != null)
             {
                 Console.WriteLine($"Adding group to index GroupFilter: {grantedGroup.DisplayName}");
-                listOfPermission.Add(grantedGroup.Id);
+                listOfPermission.Add(grantedGroup.Id!);
             }
         });
         return listOfPermission;
