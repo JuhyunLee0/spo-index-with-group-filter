@@ -4611,24 +4611,26 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\juhyunlee\\.nuget\\packages\\": {}
+    "C:\\Users\\bart\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\juhyunlee\\workspace\\spo-index-with-group-filter\\spo-index-with-group-filter.csproj",
+      "projectUniqueName": "C:\\Users\\bart\\Source\\Repos\\SharePointIndexToAzureAISearch\\spo-index-with-group-filter.csproj",
       "projectName": "spo-index-with-group-filter",
-      "projectPath": "C:\\Users\\juhyunlee\\workspace\\spo-index-with-group-filter\\spo-index-with-group-filter.csproj",
-      "packagesPath": "C:\\Users\\juhyunlee\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\juhyunlee\\workspace\\spo-index-with-group-filter\\obj\\",
+      "projectPath": "C:\\Users\\bart\\Source\\Repos\\SharePointIndexToAzureAISearch\\spo-index-with-group-filter.csproj",
+      "packagesPath": "C:\\Users\\bart\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\bart\\Source\\Repos\\SharePointIndexToAzureAISearch\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\juhyunlee\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\bart\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -4641,6 +4643,11 @@
         "warnAsError": [
           "NU1605"
         ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
       }
     },
     "frameworks": {
