@@ -12,8 +12,8 @@ public class Program
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", false)
-            // .AddJsonFile("appsettings.dev.json", false)
+            //.AddJsonFile("appsettings.json", false)
+            .AddJsonFile("appsettings.dev.json", false)
             .Build();
 
         // setting up application settings

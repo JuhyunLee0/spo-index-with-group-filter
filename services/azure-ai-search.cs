@@ -150,8 +150,29 @@ public class AzureAISearchService
                 new SimpleField("chunk_id", SearchFieldDataType.String) { IsFilterable = false, IsSortable = true},
                 new SearchableField("content") { IsFilterable = true },
                 new SearchField("group_ids", SearchFieldDataType.Collection(SearchFieldDataType.String)) { IsFilterable = true },
+                new SearchField("contentvector", SearchFieldDataType.Collection(SearchFieldDataType.Single)) { IsSearchable = true, VectorSearchDimensions = 1536, VectorSearchProfileName = "vector-profile" }
             }
         };
+
+        // Add HNSW Parameters
+        var algorithmParameters = new HnswParameters();
+        algorithmParameters.M = 4;
+        algorithmParameters.EfConstruction = 400;
+        algorithmParameters.EfSearch = 500;
+        algorithmParameters.Metric = VectorSearchAlgorithmMetric.Cosine;
+
+        // Add HNSW Configuration
+        var algorithm = new HnswAlgorithmConfiguration("vector-config");
+        algorithm.Parameters = algorithmParameters;
+
+        // Add Vector Search Configuration with algorithm
+        var vectorSearch = new VectorSearch();
+        vectorSearch.Algorithms.Add(algorithm);
+        searchIndex.VectorSearch = vectorSearch;
+
+        // Add the vector search profile
+        var vectorProfile = new VectorSearchProfile("vector-profile", "vector-config");
+        searchIndex.VectorSearch.Profiles.Add(vectorProfile);
 
         return searchIndex;
     }
