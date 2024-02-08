@@ -16,36 +16,63 @@ public class Program
             .AddJsonFile("appsettings.dev.json", false)
             .Build();
 
-        // setting up application settings
+        // Setting up SharePoint application settings
         var clientId = configuration["AadApplicationClientId"];
         var clientSecret = configuration["AadApplicationClientSecret"];
         var tenantId = configuration["AadApplicationTenantId"];
         var SpoSiteUrl = configuration["SpoSiteUrl"];
         var SpoSiteName = configuration["SpoSiteName"];
 
-        // catch error if any of the variable is empty
+        // Setting up Azure AI Search Index
+        var AzureAISearchServiceName = configuration["AzureAISearchServiceName"];
+        var AzureAISearchAdminKey = configuration["AzureAISearchAdminKey"];
+        var AzureAISearchIndexName = configuration["AzureAISearchIndexName"];
+
+        // Catch error if any of the key SharePoint connecion settings are empty
         if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret) || string.IsNullOrEmpty(tenantId))
         {
             throw new ArgumentNullException("clientId, clientSecret, tenantId");
         }
-        //initialize graph client
-        var graphClient = new GraphService(clientId, clientSecret, tenantId);
 
-        // catch error if any of the variable is empty
+        // Catch error if any of the SharePoint variables is empty
         if (string.IsNullOrEmpty(SpoSiteUrl) || string.IsNullOrEmpty(SpoSiteName))
         {
             throw new ArgumentNullException("SpoSiteUrl, SpoSiteName");
         }
-        // getting site id from graph
-        var listOfDrives = await graphClient.GetSpoDriveList(SpoSiteUrl, SpoSiteName);
-        // checking if drives are empty
-        if (listOfDrives.Value.Count == 0)
+
+        // Checking if any of the variable is empty
+        if (string.IsNullOrEmpty(AzureAISearchServiceName) || string.IsNullOrEmpty(AzureAISearchAdminKey) || string.IsNullOrEmpty(AzureAISearchIndexName))
+        {
+            throw new ArgumentNullException("AzureAISearchServiceName, AzureAISearchAdminApiKey, AzureAISearchIndexName");
+        }
+
+
+        // Initialize Microsoft Graph client
+        var graphClient = new GraphService(clientId, clientSecret, tenantId);
+        if (graphClient != null)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Successfully Connected to SharePoint Site");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        // Get SharePoint SiteId from Graph
+        var listOfDrives = await graphClient!.GetSpoDriveList(SpoSiteUrl, SpoSiteName);
+        // Checking if drives are empty
+        if (listOfDrives!.Value.Count == 0)
         {
             throw new Exception("No drives found in the site");
         }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine();
+            Console.WriteLine("Successfully found SharePoint document libraries:");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
 
-        // showing list of drives
-        Console.WriteLine("List of drives:");
+        // Show list of SharePoint Document Libraries (Drives)
+        Console.WriteLine("List of Graph Drives (SharePoint document libraries):");
         for (int i = 0; i < listOfDrives.Value.Count; i++)
         {
             Console.WriteLine($"{i + 1}. {listOfDrives.Value[i].Name}");
@@ -56,7 +83,7 @@ public class Program
         while (selectedDriveIndex < 0 || selectedDriveIndex >= listOfDrives.Value.Count)
         {
             Console.WriteLine("Enter the number of the drive you want to select:");
-            string input = Console.ReadLine();
+            string input = Console.ReadLine() ?? string.Empty;
             selectedDriveIndex = int.Parse(input) - 1;
 
             if (selectedDriveIndex < 0 || selectedDriveIndex >= listOfDrives.Value.Count)
@@ -66,29 +93,27 @@ public class Program
         }
 
         var selectedDrive = listOfDrives.Value[selectedDriveIndex];
-        Console.WriteLine($"You selected Drive Id: {selectedDrive.Id}, Drive Name: {selectedDrive.Name}");
+        Console.WriteLine($"You selected SharePoint Drive Id: {selectedDrive.Id}, Drive Name: {selectedDrive.Name}");
 
-        // get list of groupid for the drive via permission
+        // Get list of GroupId for the drive via permission(s)
         var listOfPermissionedGroup = await graphClient.GetListOfPermissionedGroupForDrive(selectedDrive.Id);
-
-        // checking for azure ai search index
-        var AzureAISearchServiceName = configuration["AzureAISearchServiceName"];
-        var AzureAISearchAdminKey = configuration["AzureAISearchAdminKey"];
-        var AzureAISearchIndexName = configuration["AzureAISearchIndexName"];
-        // checking if any of the variable is empty
-        if (string.IsNullOrEmpty(AzureAISearchServiceName) || string.IsNullOrEmpty(AzureAISearchAdminKey) || string.IsNullOrEmpty(AzureAISearchIndexName))
-        {
-            throw new ArgumentNullException("AzureAISearchServiceName, AzureAISearchAdminApiKey, AzureAISearchIndexName");
-        }
 
         // create azure ai search client
         var azureAISearchClient = new AzureAISearchService(AzureAISearchServiceName, AzureAISearchIndexName, AzureAISearchAdminKey);
-        Console.Write($"Would you like to create or update index with name {AzureAISearchIndexName}(y/n)? ");
+        if (azureAISearchClient != null)
+        {
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"Successfully connected to Azure AI Search Index: {azureAISearchClient.SearchIndexName} in {azureAISearchClient.SearchEndPoint}");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        Console.WriteLine($"Would you like to create or update index with name {AzureAISearchIndexName}(y/n)? ");
         string indexChoice = Console.ReadLine()?.ToLower() ?? string.Empty;
         if (indexChoice.ToLower() == "y")
         {
             // Create the search index  
-            azureAISearchClient.CreateOrUpdateIndex();
+            azureAISearchClient!.CreateOrUpdateIndex();
         }
         Console.Write("Would you like to create or update index data (y/n)? ");
         string indexDataChoice = Console.ReadLine()?.ToLower() ?? string.Empty;
@@ -124,7 +149,7 @@ public class Program
 #pragma warning disable SKEXP0055 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 List<string> paragraphs = TextChunker.SplitPlainTextParagraphs(TextChunker.SplitPlainTextLines(textBuilder.ToString(), 128), 1024, 50);
 #pragma warning restore SKEXP0055 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                List<DocumentIndex> documentIndexes = await azureAISearchClient.GenerateDocumentIndexDateAsync(paragraphs, itemValue, listOfPermissionedGroup);
+                List<DocumentIndex> documentIndexes = await azureAISearchClient!.GenerateDocumentIndexDateAsync(paragraphs, itemValue, listOfPermissionedGroup);
                 await azureAISearchClient.InsertToSearchIndexStoreAsync(documentIndexes);
             }
         }

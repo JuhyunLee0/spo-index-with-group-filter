@@ -7,21 +7,19 @@ using Azure.Search.Documents.Models;
 
 public class AzureAISearchService
 {
-
-    private readonly string _SearchIndexName;
-    private readonly Uri _SearchEndPoint;
+    public string SearchIndexName { get; set; }
+    public Uri SearchEndPoint { get; set; }
     private readonly string _SearchAdminKey;
     private readonly SearchClient _SearchClient;
     private readonly SearchIndexClient _IndexClient;
 
     public AzureAISearchService(string AzureAISearchServiceName, string AzureAISearchIndexName, string AzureAISearchAdminKey)
     {
-        _SearchIndexName = AzureAISearchIndexName;
-        _SearchEndPoint = new Uri($"https://{AzureAISearchServiceName}.search.windows.net/");
+        SearchIndexName = AzureAISearchIndexName;
+        SearchEndPoint = new Uri($"https://{AzureAISearchServiceName}.search.windows.net/");
         _SearchAdminKey = AzureAISearchAdminKey;
-        Console.WriteLine($"Azure Cognitive Search Index: {_SearchIndexName} in {_SearchEndPoint}");
-        _SearchClient = new(_SearchEndPoint, _SearchIndexName, new AzureKeyCredential(_SearchAdminKey));
-        _IndexClient = new SearchIndexClient(_SearchEndPoint, new AzureKeyCredential(_SearchAdminKey));
+        _SearchClient = new(SearchEndPoint, SearchIndexName, new AzureKeyCredential(_SearchAdminKey));
+        _IndexClient = new SearchIndexClient(SearchEndPoint, new AzureKeyCredential(_SearchAdminKey));
     }
 
     public async Task DeleteFromSearchIndexStoreAsync(string filter)
@@ -41,17 +39,17 @@ public class AzureAISearchService
             }
             if (Ids.Count == 0)
             {
-                Console.WriteLine($"No documents found to delete from Azure Cognitive Search Index: {_SearchIndexName}");
+                Console.WriteLine($"No documents found to delete from Azure Cognitive Search Index: {SearchIndexName}");
                 return;
             }
             Response<IndexDocumentsResult> res = await _SearchClient.DeleteDocumentsAsync("id", (IEnumerable<string>)Ids);
             if (res.GetRawResponse().Status == 200)
             {
-                Console.WriteLine($"Successfully deleted documents from Azure Cognitive Search Index: {_SearchIndexName}");
+                Console.WriteLine($"Successfully deleted documents from Azure Cognitive Search Index: {SearchIndexName}");
             }
             else
             {
-                Console.WriteLine($"Failed to delete documents from Azure Cognitive Search Index: {_SearchIndexName}");
+                Console.WriteLine($"Failed to delete documents from Azure Cognitive Search Index: {SearchIndexName}");
 
             }
             return;
@@ -69,20 +67,24 @@ public class AzureAISearchService
         try
         {
             // Create the index if it doesn't exist
-            if (!_SearchClient.IndexName.Equals(_SearchIndexName))
+            if (!_SearchClient.IndexName.Equals(SearchIndexName))
             {
-                Console.WriteLine($"Creating index {_SearchIndexName}...");
+                Console.WriteLine($"Creating index {SearchIndexName}...");
                 //await CreateIndexAsync();
             }
 
             Response<IndexDocumentsResult> res = await _SearchClient.MergeOrUploadDocumentsAsync(results);
             if (res.GetRawResponse().Status == 200)
             {
-                Console.WriteLine($"Successfully uploaded documents to Azure Cognitive Search Index: {_SearchIndexName}");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Successfully uploaded documents to Azure AI Search Index: {SearchIndexName}");
+                Console.ForegroundColor = ConsoleColor.White;
             }
             else
             {
-                Console.WriteLine($"Failed to upload documents to Azure Cognitive Search Index: {_SearchIndexName}");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Failed to upload documents to Azure AI Search Index: {SearchIndexName}");
+                Console.ForegroundColor = ConsoleColor.White;
             }
         }
         catch (Exception ex)
@@ -125,7 +127,9 @@ public class AzureAISearchService
             Response<SearchIndex> index = _IndexClient.CreateOrUpdateIndex(GetSearchIndex());
             if ((index.GetRawResponse().Status >= 200) || (index.GetRawResponse().Status < 210))
             {
-                Console.WriteLine($"Successfully created/updated Azure Cognitive Search Index: {_SearchIndexName} in {_SearchEndPoint}");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Successfully created/updated Azure AI Search Index: {SearchIndexName} in {SearchEndPoint}");
+                Console.ForegroundColor = ConsoleColor.White;
             }
         }
         catch (Exception ex)
@@ -137,7 +141,7 @@ public class AzureAISearchService
 
     private SearchIndex GetSearchIndex()
     {
-        SearchIndex searchIndex = new(_SearchIndexName)
+        SearchIndex searchIndex = new(SearchIndexName)
         {
             Fields =
             {
@@ -150,6 +154,7 @@ public class AzureAISearchService
                 new SimpleField("chunk_id", SearchFieldDataType.String) { IsFilterable = false, IsSortable = true},
                 new SearchableField("content") { IsFilterable = true },
                 new SearchField("group_ids", SearchFieldDataType.Collection(SearchFieldDataType.String)) { IsFilterable = true },
+                // Add SearchField with contentvector profile
                 new SearchField("contentvector", SearchFieldDataType.Collection(SearchFieldDataType.Single)) { IsSearchable = true, VectorSearchDimensions = 1536, VectorSearchProfileName = "vector-profile" }
             }
         };
