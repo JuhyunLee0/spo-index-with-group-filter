@@ -1,4 +1,4 @@
-SPO-Index-With-Group-Filter
+SharePointIndexToAzureAISearch
 ============
 
 simple console app to demonstrate how to create an Azure AI Search Index using SharePoint files, and its Permission groups.\
