@@ -124,7 +124,8 @@ public class AzureAISearchService
     {
         try
         {
-            Response<SearchIndex> index = _IndexClient.CreateOrUpdateIndex(GetSearchIndex());
+            var searchIndex = this.GetSearchIndex();
+            Response<SearchIndex> index = _IndexClient.CreateOrUpdateIndex(searchIndex);
             if ((index.GetRawResponse().Status >= 200) || (index.GetRawResponse().Status < 210))
             {
                 Console.ForegroundColor = ConsoleColor.Green;
