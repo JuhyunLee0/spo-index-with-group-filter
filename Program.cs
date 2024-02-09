@@ -1,5 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
 using System.Text;
@@ -10,11 +12,30 @@ public class Program
 {
     static async Task Main(string[] args)
     {
+        // OpenAI Token Settings
+        var MAXTOKENSPERLINE = 300;
+        var MAXTOKENSPERPARAGRAPH = 1500; // Provide enough context to answer questions
+        var OVERLAPTOKENSPERPARAGRAPH = 60; // Overlap setting, could be set higher
+
+        // Build the config
+        // Note: For dev use appsettings.dev.json
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             //.AddJsonFile("appsettings.json", false)
             .AddJsonFile("appsettings.dev.json", false)
             .Build();
+
+        var builder = new HostBuilder();
+        builder
+            .ConfigureServices((hostContext, services) =>
+            {
+                // with AddHttpClient we register the IHttpClientFactory
+                services.AddHttpClient();
+                // Retrieve Polly retry policy and apply it
+                var retryPolicy = HttpPolicies.GetRetryPolicy();
+                services.AddHttpClient<IOpenAIServiceManagement, OpenAIServiceManagement>().AddPolicyHandler(retryPolicy);
+            });
+        var host = builder.Build();
 
         // Setting up SharePoint application settings
         var clientId = configuration["AadApplicationClientId"];
@@ -27,6 +48,11 @@ public class Program
         var AzureAISearchServiceName = configuration["AzureAISearchServiceName"];
         var AzureAISearchAdminKey = configuration["AzureAISearchAdminKey"];
         var AzureAISearchIndexName = configuration["AzureAISearchIndexName"];
+
+        // Setting up the Azure OpenAI Embeddings Endpoint
+        var azureOpenAPIKey = configuration["AzureOpenAIAPIKey"];
+        var azureOpenAIResource = configuration["AzureOpenAIResource"];
+        var azureOpenAIModelDeploymentName = configuration["AzureOpenAIModelDeploymentName"];
 
         // Catch error if any of the key SharePoint connecion settings are empty
         if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret) || string.IsNullOrEmpty(tenantId))
@@ -44,6 +70,12 @@ public class Program
         if (string.IsNullOrEmpty(AzureAISearchServiceName) || string.IsNullOrEmpty(AzureAISearchAdminKey) || string.IsNullOrEmpty(AzureAISearchIndexName))
         {
             throw new ArgumentNullException("AzureAISearchServiceName, AzureAISearchAdminApiKey, AzureAISearchIndexName");
+        }
+
+        // Checking if any of the Azure OpenAPI Settings are empty
+        if (string.IsNullOrEmpty(azureOpenAPIKey) || string.IsNullOrEmpty(azureOpenAIResource) || string.IsNullOrEmpty(azureOpenAIModelDeploymentName))
+        {
+            throw new ArgumentNullException("azureOpenAPIKey, azureOpenAIResource, azureOpenAIModelDeploymentName");
         }
 
 
@@ -98,6 +130,13 @@ public class Program
         // Get list of GroupId for the drive via permission(s)
         var listOfPermissionedGroup = await graphClient.GetListOfPermissionedGroupForDrive(selectedDrive.Id);
 
+        // Initialize the Azure OpenAI Client
+        // Create the OpenAI Service
+        var azureOpenAIService = host.Services.GetRequiredService<IOpenAIServiceManagement>();
+        azureOpenAIService.APIKey = azureOpenAPIKey;
+        azureOpenAIService.AzureOpenAIResource = azureOpenAIResource;
+        azureOpenAIService.AzureOpenAIModelDeploymentName = azureOpenAIModelDeploymentName;
+
         // create azure ai search client
         var azureAISearchClient = new AzureAISearchService(AzureAISearchServiceName, AzureAISearchIndexName, AzureAISearchAdminKey);
         if (azureAISearchClient != null)
@@ -132,7 +171,7 @@ public class Program
 
             foreach (var item in jsonContent)
             {
-                CustomGraphResponseValue itemValue = (CustomGraphResponseValue)item;
+                CustomGraphResponseValue itemValue = (CustomGraphResponseValue) item;
                 HttpContent fileContent = await apiSerivce.DownloadSharePointFileAsync(accessToken, itemValue.MicrosoftGraphdownloadUrl);
 
                 Stream streamContent = await fileContent.ReadAsStreamAsync();
@@ -147,13 +186,15 @@ public class Program
                 reader.Close();
 
 #pragma warning disable SKEXP0055 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                List<string> paragraphs = TextChunker.SplitPlainTextParagraphs(TextChunker.SplitPlainTextLines(textBuilder.ToString(), 128), 1024, 50);
+                var documentText = textBuilder.ToString();
+                var documentLines = Microsoft.SemanticKernel.Text.TextChunker.SplitPlainTextLines(documentText, MAXTOKENSPERLINE);
+                List<string> paragraphs = TextChunker.SplitPlainTextParagraphs(documentLines, MAXTOKENSPERPARAGRAPH, 0);
 #pragma warning restore SKEXP0055 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                List<DocumentIndex> documentIndexes = await azureAISearchClient!.GenerateDocumentIndexDateAsync(paragraphs, itemValue, listOfPermissionedGroup);
+                List<DocumentIndex> documentIndexes = await azureAISearchClient!.GenerateDocumentIndexDateAsync(paragraphs, itemValue, listOfPermissionedGroup, azureOpenAIService);
                 await azureAISearchClient.InsertToSearchIndexStoreAsync(documentIndexes);
             }
         }
 
-        Console.WriteLine("---- Succesfully created index and index data, please check azure portal (please note that it may take couple of minutes for index to populate with data.) ----");
+        Console.WriteLine("---- Successfully created index and index data, please check azure portal (please note that it may take couple of minutes for index to populate with data.) ----");
     }
 }

@@ -3,6 +3,7 @@ using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
+using SharpToken;
 
 
 public class AzureAISearchService
@@ -96,24 +97,32 @@ public class AzureAISearchService
 
     }
 
-    public async Task<List<DocumentIndex>> GenerateDocumentIndexDateAsync(List<string> paragraphs, CustomGraphResponseValue itemValue, List<string> groupIds)
+    public async Task<List<DocumentIndex>> GenerateDocumentIndexDateAsync(List<string> paragraphs, CustomGraphResponseValue itemValue, List<string> groupIds, IOpenAIServiceManagement azureOpenIService)
     {
         List<DocumentIndex> documentIndexes = new();
 
         int c = 1;
         foreach (var paragraph in paragraphs)
         {
+            // Gpt Encoding using the same token encoding as Ada-V2 Embeddings
+            var cl100kBaseEncoding = GptEncoding.GetEncoding("cl100k_base");
+            var encodedTokens = cl100kBaseEncoding.Encode(paragraph);
+
+            // var embeddings = await azureOpenIService.GetEmbeddings(paragraph);
+
             documentIndexes.Add(new DocumentIndex
             {
                 id = $"{itemValue.id}-{c}" ?? new Guid().ToString(),
                 content = paragraph,
+                //contentvector = embeddings.ToArray(),
                 title = itemValue.name ?? string.Empty,
                 filepath = itemValue.name ?? string.Empty,
                 url = itemValue.webUrl ?? string.Empty,
                 chunk_id = c.ToString(),
-                // sample AAD groups GUID for security trimming
+                // Sample AAD groups GUID for security filtering
                 group_ids = groupIds.ToArray(),
-            });
+                tokensize = encodedTokens.Count().ToString(),
+        }); ;
             c++;
         }
 
@@ -155,7 +164,8 @@ public class AzureAISearchService
                 new SimpleField("chunk_id", SearchFieldDataType.String) { IsFilterable = false, IsSortable = true},
                 new SearchableField("content") { IsFilterable = true },
                 new SearchField("group_ids", SearchFieldDataType.Collection(SearchFieldDataType.String)) { IsFilterable = true },
-                // Add SearchField with contentvector profile
+                new SearchableField("tokensize") {IsFilterable = true, IsSortable=true},
+                // Add SearchField with contentvector profile for vector search
                 new SearchField("contentvector", SearchFieldDataType.Collection(SearchFieldDataType.Single)) { IsSearchable = true, VectorSearchDimensions = 1536, VectorSearchProfileName = "vector-profile" }
             }
         };
