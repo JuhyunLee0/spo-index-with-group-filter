@@ -165,6 +165,7 @@ public class AzureAISearchService
             Response<SearchIndex> index = _IndexClient.CreateOrUpdateIndex(searchIndex);
             if ((index.GetRawResponse().Status >= 200) || (index.GetRawResponse().Status < 210))
             {
+                Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"Successfully created/updated Azure AI Search Index: {SearchIndexName} in {SearchEndPoint}");
                 Console.ForegroundColor = ConsoleColor.White;

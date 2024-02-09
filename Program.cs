@@ -204,15 +204,16 @@ public class Program
 
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("---- Successfully created index and index data, please check azure portal (please note that it may take couple of minutes for index to populate with data.) ----");
+            Console.WriteLine("Successfully created index and index data, please check azure portal (please note that it may take couple of minutes for index to populate with data.)");
+            Console.ForegroundColor = ConsoleColor.White;
         }
 
-        Console.WriteLine("Would you like to search the index (y/n)? ");
+        Console.WriteLine("Would you like to search the index, using Semantic Kernel vector search (y/n)? ");
         string searchIndexChoice = Console.ReadLine()?.ToLower() ?? string.Empty;
         if (searchIndexChoice.ToLower() == "y")
         {
             // Perform Vector search in Azure AI
-            var searchString = "What is covered by Perks Plus?";
+            var searchString = "Summarize the Perks Plus policies.";
             Console.WriteLine($"Searching: {searchString}");
 
             var topMatchingDocument = await azureAISearchClient!.SearchIndex(searchString, azureOpenAIService);
