@@ -6,6 +6,9 @@ using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
 using System.Text;
 using Microsoft.SemanticKernel.Text;
+using Microsoft.SemanticKernel;
+using SharpToken;
+using Microsoft.Graph.Models;
 
 
 public class Program
@@ -14,8 +17,7 @@ public class Program
     {
         // OpenAI Token Settings
         var MAXTOKENSPERLINE = 300;
-        var MAXTOKENSPERPARAGRAPH = 1500; // Provide enough context to answer questions
-        var OVERLAPTOKENSPERPARAGRAPH = 60; // Overlap setting, could be set higher
+        var MAXTOKENSPERPARAGRAPH = 4000; // Provide enough context to answer questions
 
         // Build the config
         // Note: For dev use appsettings.dev.json
@@ -154,15 +156,16 @@ public class Program
             // Create the search index  
             azureAISearchClient!.CreateOrUpdateIndex();
         }
-        Console.Write("Would you like to create or update index data (y/n)? ");
+
+
+        Console.WriteLine("Would you like to create or update index data (y/n)? ");
         string indexDataChoice = Console.ReadLine()?.ToLower() ?? string.Empty;
-        
         if (indexDataChoice.ToLower() == "y")
         {
-            var apiSerivce = new ApiService();
+            var apiService = new ApiService();
             var accessToken = graphClient.AccessToken;
 
-            var jsonContent = await apiSerivce.GetSharePointFileList(accessToken, selectedDrive.Id);
+            var jsonContent = await apiService.GetSharePointFileList(accessToken, selectedDrive.Id);
             if (jsonContent == null)
             {
                 Console.WriteLine("No files found in the SPO Document Library");
@@ -172,7 +175,11 @@ public class Program
             foreach (var item in jsonContent)
             {
                 CustomGraphResponseValue itemValue = (CustomGraphResponseValue) item;
-                HttpContent fileContent = await apiSerivce.DownloadSharePointFileAsync(accessToken, itemValue.MicrosoftGraphdownloadUrl);
+                Console.WriteLine($"- Processing...{itemValue.name}");
+
+                // TODO: Use HttpClientFactory
+                var apiServiceItem = new ApiService();
+                HttpContent fileContent = await apiServiceItem.DownloadSharePointFileAsync(accessToken, itemValue.MicrosoftGraphdownloadUrl);
 
                 Stream streamContent = await fileContent.ReadAsStreamAsync();
                 PdfReader reader = new PdfReader(streamContent);
@@ -191,10 +198,50 @@ public class Program
                 List<string> paragraphs = TextChunker.SplitPlainTextParagraphs(documentLines, MAXTOKENSPERPARAGRAPH, 0);
 #pragma warning restore SKEXP0055 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 List<DocumentIndex> documentIndexes = await azureAISearchClient!.GenerateDocumentIndexDateAsync(paragraphs, itemValue, listOfPermissionedGroup, azureOpenAIService);
+                // Send the document to the Azure AI Search Index
                 await azureAISearchClient.InsertToSearchIndexStoreAsync(documentIndexes);
             }
+
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("---- Successfully created index and index data, please check azure portal (please note that it may take couple of minutes for index to populate with data.) ----");
         }
 
-        Console.WriteLine("---- Successfully created index and index data, please check azure portal (please note that it may take couple of minutes for index to populate with data.) ----");
+        Console.WriteLine("Would you like to search the index (y/n)? ");
+        string searchIndexChoice = Console.ReadLine()?.ToLower() ?? string.Empty;
+        if (searchIndexChoice.ToLower() == "y")
+        {
+            // Perform Vector search in Azure AI
+            var searchString = "What is covered by Perks Plus?";
+            Console.WriteLine($"Searching: {searchString}");
+
+            var topMatchingDocument = await azureAISearchClient!.SearchIndex(searchString, azureOpenAIService);
+            var documentText = topMatchingDocument.Document.content;
+            Console.WriteLine($"Top matching document: {topMatchingDocument.Document.title}");
+
+            var semanticKernelBuilder = Kernel.CreateBuilder();
+            semanticKernelBuilder.Services.AddAzureOpenAIChatCompletion(
+                "gpt-4-preview-1106",
+                "https://bartopenaiswedencentral.openai.azure.com/",
+                azureOpenAPIKey,
+                "gpt-4-preview-1106"
+                );
+            var semanticKernel = semanticKernelBuilder.Build();
+
+            var summarizeFunction = semanticKernel.CreateFunctionFromPrompt(
+                @"Summarize the text from a PDF document.
+                Text: {{$documentText}}"
+            );
+
+            var summary = await semanticKernel.InvokeAsync(summarizeFunction,
+                new()
+                {
+                    {"documentText", documentText}
+                });
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"Summary of {topMatchingDocument.Document.title}: {summary.ToString()}");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
     }
 }

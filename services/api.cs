@@ -20,18 +20,19 @@ public class ApiService
     /// <param name="httpClientFactory"></param>
     public ApiService()
     {
-
     }
 
     public async Task<object> ExecuteGetAsync(string requestUrl, string accessToken)
     {
         
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+        request.Headers.Accept.Clear();
         var authHeader = new AuthenticationHeaderValue(requestHeaderAuthorizationType, accessToken);
         request.Headers.Add("Accept", "application/json");
         request.Headers.Add("Authorization", "Bearer " + accessToken);
-        using (HttpClient httpClient = new HttpClient()){
-            using (HttpResponseMessage response = await httpClient.SendAsync(request))
+        //using (HttpClient httpClient = new HttpClient())
+        //{
+            using (HttpResponseMessage response = await client.SendAsync(request))
             {
                 if(response.IsSuccessStatusCode)
                 {
@@ -43,7 +44,7 @@ public class ApiService
                     Console.WriteLine($"Error: {response.StatusCode}");
                 }
             }
-        }
+        //}
         
         
         return "";

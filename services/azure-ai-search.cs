@@ -3,6 +3,8 @@ using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
+using iTextSharp.text;
+using Microsoft.Graph.Models;
 using SharpToken;
 
 
@@ -63,10 +65,36 @@ public class AzureAISearchService
         }
     }
 
+    public async Task<SearchResult<DocumentIndex>> SearchIndex(string searchTerm, IOpenAIServiceManagement azureOpenIService)
+    {
+        // Retrieve the Embeddings
+        var embeddings = await azureOpenIService.GetEmbeddings(searchTerm);
+        var embeddingsArray = embeddings.ToArray();
+
+        // Perform the vector similarity search  
+        // https://github.com/Azure/azure-search-vector-samples/tree/main/demo-dotnet/DotNetVectorDemo 
+        var searchOptions = new SearchOptions
+        {
+            VectorSearch = new()
+            {
+                Queries = { new VectorizedQuery(embeddingsArray) { KNearestNeighborsCount = 5, Fields = { "contentvector" } } }
+            },
+            Size = 5,
+            Select = { "id", "title", "content"}
+        };
+
+        SearchResults<DocumentIndex> searchResults = await _SearchClient.SearchAsync<DocumentIndex>(null, searchOptions);
+        var firstResult = searchResults.GetResults().First();
+
+        return firstResult;
+    }
+
     public async Task InsertToSearchIndexStoreAsync(List<DocumentIndex> results)
     {
         try
         {
+            var documentName = results[0].title;
+
             // Create the index if it doesn't exist
             if (!_SearchClient.IndexName.Equals(SearchIndexName))
             {
@@ -77,14 +105,14 @@ public class AzureAISearchService
             Response<IndexDocumentsResult> res = await _SearchClient.MergeOrUploadDocumentsAsync(results);
             if (res.GetRawResponse().Status == 200)
             {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"Successfully uploaded documents to Azure AI Search Index: {SearchIndexName}");
-                Console.ForegroundColor = ConsoleColor.White;
+                //Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"- Successfully uploaded {documentName} to Azure AI Search Index: {SearchIndexName}");
+                //Console.ForegroundColor = ConsoleColor.White;
             }
             else
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Failed to upload documents to Azure AI Search Index: {SearchIndexName}");
+                Console.WriteLine($"- Failed to upload {documentName} to Azure AI Search Index: {SearchIndexName}");
                 Console.ForegroundColor = ConsoleColor.White;
             }
         }
@@ -107,14 +135,14 @@ public class AzureAISearchService
             // Gpt Encoding using the same token encoding as Ada-V2 Embeddings
             var cl100kBaseEncoding = GptEncoding.GetEncoding("cl100k_base");
             var encodedTokens = cl100kBaseEncoding.Encode(paragraph);
-
-            // var embeddings = await azureOpenIService.GetEmbeddings(paragraph);
+            // Retrieve the Embeddings
+            var embeddings = await azureOpenIService.GetEmbeddings(paragraph);
 
             documentIndexes.Add(new DocumentIndex
             {
                 id = $"{itemValue.id}-{c}" ?? new Guid().ToString(),
                 content = paragraph,
-                //contentvector = embeddings.ToArray(),
+                contentvector = embeddings.ToArray(),
                 title = itemValue.name ?? string.Empty,
                 filepath = itemValue.name ?? string.Empty,
                 url = itemValue.webUrl ?? string.Empty,
@@ -133,7 +161,7 @@ public class AzureAISearchService
     {
         try
         {
-            var searchIndex = this.GetSearchIndex();
+            var searchIndex = this.BuildAISearchIndex();
             Response<SearchIndex> index = _IndexClient.CreateOrUpdateIndex(searchIndex);
             if ((index.GetRawResponse().Status >= 200) || (index.GetRawResponse().Status < 210))
             {
@@ -149,7 +177,7 @@ public class AzureAISearchService
         }
     }
 
-    private SearchIndex GetSearchIndex()
+    private SearchIndex BuildAISearchIndex()
     {
         SearchIndex searchIndex = new(SearchIndexName)
         {
