@@ -30,7 +30,9 @@ https://learn.microsoft.com/en-us/azure/search/search-create-service-portal
     * AzureAISearchServiceName :  `Azure AI Search Deployment Name`
     * AzureAISearchIndexName : `Azure AI Search Index Name`
     * AzureAISearchAdminKey : `Azure AI Search Key`
-
+    * AzureOpenAIAPIKey": `Azure OpenAI Key`
+    * AzureOpenAIResource": `Azure OpenAI Resource Name, just the name not the full URL`
+    * AzureOpenAIModelDeploymentName": `Embeddings model deployment name`
 
 Running the App
 ------------
@@ -93,12 +95,12 @@ Successfully uploaded documents to Azure Cognitive Search Index: <SEARCH INDEX N
 For simplicity the current sample code will only index PDF files\
 you can extend this by adding more file reader related code\
 \
-if sharepoint have lot of permission, you may need to modify the group array graph call to handle pagination\
+If sharepoint have lot of permission, you may need to modify the group array graph call to handle pagination\
 same goes for sharepoint files, if there is lot of files, you may need to pagninate the api call to handle multiple pages.
 
 &nbsp;
 ___
-please note that this console app referrenced this repo\
+Please note that this console app referrenced this repo\
 https://github.com/subhasishmukhopadhyay2018/democode/tree/main/AzureOpenAI
 
 To take a look at in more detail please refer to the article below\
