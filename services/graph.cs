@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 public class GraphService
 {
     private GraphServiceClient _graphClient;
-    private string _spoSiteId;
+    private string _spoSiteId = string.Empty;
     private string accessToken;
 
     public string AccessToken
@@ -44,8 +44,8 @@ public class GraphService
                 {
                     requestConfiguration.QueryParameters.Select = new string[] { "id" };
                 });
-            Console.WriteLine($"Site ID: {site.Id}");
-            _spoSiteId = site.Id;
+            Console.WriteLine($"Site ID: {site!.Id}");
+            _spoSiteId = site.Id!;
         }
         catch (ServiceException ex)
         {
@@ -55,7 +55,6 @@ public class GraphService
         var drives = await _graphClient.Sites[_spoSiteId].Drives.GetAsync();
         return drives;
     }
-
 
     public async Task<dynamic?> GetListOfPermissionedGroupForDrive(string driveId){
         // generate group permission with from drive
@@ -71,14 +70,13 @@ public class GraphService
             // checking if grantedGrp is not null
             if (grantedGroup != null)
             {
-                Console.WriteLine($"adding group to index GroupFilter: {grantedGroup.DisplayName}");
-                listOfPermission.Add(grantedGroup.Id);
+                Console.WriteLine($"Adding group to index GroupFilter: {grantedGroup.DisplayName}");
+                listOfPermission.Add(grantedGroup.Id!);
             }
         });
         return listOfPermission;
     }
     
-
     // public async Task<dynamic?> GetSharepointDriveItems(string driveId){
         
     //     List<string> listOfFiles = new List<string>();

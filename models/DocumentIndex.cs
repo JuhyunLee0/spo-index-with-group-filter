@@ -11,10 +11,12 @@ public class DocumentIndex
     // create class properties based on the structure of the JSON response
     public string id { get; set; } = string.Empty;
     public string content { get; set; } = string.Empty;
+    public float[] contentvector { get; set; } = new float[1536];
     public string filepath { get; set; } = string.Empty;
     public string title { get; set; } = string.Empty;
     public string url { get; set; } = string.Empty;
     public string chunk_id { get; set; } = string.Empty;
     public string last_updated { get; set; } = string.Empty;
     public string[] group_ids { get; set; } = new string[] { };
+    public string tokensize { get; set; } = string.Empty;
 }
