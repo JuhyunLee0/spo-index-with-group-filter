@@ -55,6 +55,7 @@ public class Program
         var azureOpenAPIKey = configuration["AzureOpenAIAPIKey"];
         var azureOpenAIResource = configuration["AzureOpenAIResource"];
         var azureOpenAIModelDeploymentName = configuration["AzureOpenAIModelDeploymentName"];
+        var azureOpenAIEmbeddingDeploymentName = configuration["AzureOpenAIEmbeddingDeploymentName"];
 
         // Catch error if any of the key SharePoint connecion settings are empty
         if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret) || string.IsNullOrEmpty(tenantId))
@@ -75,9 +76,9 @@ public class Program
         }
 
         // Checking if any of the Azure OpenAPI Settings are empty
-        if (string.IsNullOrEmpty(azureOpenAPIKey) || string.IsNullOrEmpty(azureOpenAIResource) || string.IsNullOrEmpty(azureOpenAIModelDeploymentName))
+        if (string.IsNullOrEmpty(azureOpenAPIKey) || string.IsNullOrEmpty(azureOpenAIResource) || string.IsNullOrEmpty(azureOpenAIModelDeploymentName) || string.IsNullOrEmpty(azureOpenAIEmbeddingDeploymentName))
         {
-            throw new ArgumentNullException("azureOpenAPIKey, azureOpenAIResource, azureOpenAIModelDeploymentName");
+            throw new ArgumentNullException("azureOpenAPIKey, azureOpenAIResource, azureOpenAIModelDeploymentName", "azureOpenAIEmbeddingDeploymentName");
         }
 
 
@@ -138,6 +139,7 @@ public class Program
         azureOpenAIService.APIKey = azureOpenAPIKey;
         azureOpenAIService.AzureOpenAIResource = azureOpenAIResource;
         azureOpenAIService.AzureOpenAIModelDeploymentName = azureOpenAIModelDeploymentName;
+        azureOpenAIService.AzureOpenAIEmbeddingDeploymentName = azureOpenAIEmbeddingDeploymentName;
 
         // create azure ai search client
         var azureAISearchClient = new AzureAISearchService(AzureAISearchServiceName, AzureAISearchIndexName, AzureAISearchAdminKey);
@@ -222,11 +224,12 @@ public class Program
 
             var semanticKernelBuilder = Kernel.CreateBuilder();
             semanticKernelBuilder.Services.AddAzureOpenAIChatCompletion(
-                "gpt-4-preview-1106",
-                "https://bartopenaiswedencentral.openai.azure.com/",
+                azureOpenAIModelDeploymentName,
+                // "https://bartopenaiswedencentral.openai.azure.com/",
+                $"https://{azureOpenAIResource}.openai.azure.com/",
                 azureOpenAPIKey,
-                "gpt-4-preview-1106"
-                );
+                azureOpenAIModelDeploymentName
+            );
             var semanticKernel = semanticKernelBuilder.Build();
 
             var summarizeFunction = semanticKernel.CreateFunctionFromPrompt(

@@ -30,9 +30,10 @@ https://learn.microsoft.com/en-us/azure/search/search-create-service-portal
     * AzureAISearchServiceName :  `Azure AI Search Deployment Name`
     * AzureAISearchIndexName : `Azure AI Search Index Name`
     * AzureAISearchAdminKey : `Azure AI Search Key`
-    * AzureOpenAIAPIKey": `Azure OpenAI Key`
-    * AzureOpenAIResource": `Azure OpenAI Resource Name, just the name not the full URL`
-    * AzureOpenAIModelDeploymentName": `Embeddings model deployment name`
+    * AzureOpenAIAPIKey: `Azure OpenAI Key`
+    * AzureOpenAIResource: `Azure OpenAI Resource Name, just the name not the full URL`
+    * AzureOpenAIModelDeploymentName: `Semantic Kernel enabled GPT model Deployment name`
+    * AzureOpenAIEmbeddingDeploymentName: `Embeddings model deployment name`
 
 Running the App
 ------------

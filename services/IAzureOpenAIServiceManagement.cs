@@ -12,4 +12,5 @@ public interface IOpenAIServiceManagement
     string APIKey { get; set; }
     string AzureOpenAIResource { get; set; }
     string AzureOpenAIModelDeploymentName { get; set; }
+    string AzureOpenAIEmbeddingDeploymentName { get; set; }
 }

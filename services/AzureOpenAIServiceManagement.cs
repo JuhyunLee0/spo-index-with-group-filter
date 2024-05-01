@@ -40,6 +40,14 @@ public class OpenAIServiceManagement : IOpenAIServiceManagement
         set => _azureOpenAIModelDeploymentName = value;
     }
 
+    private string _AzureOpenAIEmbeddingDeploymentName;
+    public string AzureOpenAIEmbeddingDeploymentName
+    {
+        get => _AzureOpenAIEmbeddingDeploymentName;
+        set => _AzureOpenAIEmbeddingDeploymentName = value;
+    }
+
+
     public async Task<List<float>> GetEmbeddings(string textToEncode)
     {
         var embeddings = new List<float>(1536);
@@ -49,7 +57,7 @@ public class OpenAIServiceManagement : IOpenAIServiceManagement
         var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json")); //ACCEPT header
         httpClient.DefaultRequestHeaders.Add("api-key", this.APIKey);
-        var responseService = await httpClient.PostAsync($"https://{AzureOpenAIResource}.openai.azure.com/openai/deployments/{AzureOpenAIModelDeploymentName}/embeddings?api-version=2023-05-15", content);
+        var responseService = await httpClient.PostAsync($"https://{AzureOpenAIResource}.openai.azure.com/openai/deployments/{AzureOpenAIEmbeddingDeploymentName}/embeddings?api-version=2023-05-15", content);
 
         // Check the Response
         if (responseService.IsSuccessStatusCode)
