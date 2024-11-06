@@ -225,7 +225,6 @@ public class Program
             var semanticKernelBuilder = Kernel.CreateBuilder();
             semanticKernelBuilder.Services.AddAzureOpenAIChatCompletion(
                 azureOpenAIModelDeploymentName,
-                // "https://bartopenaiswedencentral.openai.azure.com/",
                 $"https://{azureOpenAIResource}.openai.azure.com/",
                 azureOpenAPIKey,
                 azureOpenAIModelDeploymentName
